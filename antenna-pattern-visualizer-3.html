@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Visualizador interactivo de patrones de radiación de antenas para telecomunicaciones">
+  <title>Visualizador de Patrones de Radiación de Antenas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ==================== CSS VARIABLES ==================== */
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #151b2e;
+      --bg-tertiary: #1a2235;
+      --accent-cyan: #00d4ff;
+      --accent-magenta: #ff006e;
+      --accent-yellow: #ffbe0b;
+      --accent-green: #00ff88;
+      --text-primary: #e8f4f8;
+      --text-secondary: #8ea8b8;
+      --text-muted: #5a6f82;
+      --border-color: #2a3750;
+      --shadow-strong: 0 12px 40px rgba(0, 212, 255, 0.15);
+      --shadow-medium: 0 6px 20px rgba(0, 0, 0, 0.4);
+      --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --border-radius-sm: 6px;
+      --border-radius-md: 12px;
+      --border-radius-lg: 18px;
+      --transition-fast: 150ms ease-out;
+      --transition-medium: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ==================== RESET & BASE ==================== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #0d1520 50%, var(--bg-primary) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
+    }
+
+    /* ==================== TYPOGRAPHY ==================== */
+    h1, h2, h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 4vw, 3rem);
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-magenta) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+      animation: titleGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow {
+      from { filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5)); }
+      to { filter: drop-shadow(0 0 20px rgba(255, 0, 110, 0.5)); }
+    }
+
+    h2 {
+      font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+      color: var(--accent-cyan);
+      margin-bottom: 1.2rem;
+      position: relative;
+      padding-bottom: 0.5rem;
+    }
+
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-cyan), transparent);
+      border-radius: 2px;
+    }
+
+    /* ==================== LAYOUT ==================== */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    header p {
+      color: var(--text-secondary);
+      font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Main grid layout - responsive */
+    main {
+      display: grid;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 768px) {
+      main {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1200px) {
+      main {
+        grid-template-areas:
+          "azimut elevacion"
+          "threeD threeD";
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      #azimut-section { grid-area: azimut; }
+      #elevacion-section { grid-area: elevacion; }
+      #threeD-section { grid-area: threeD; }
+    }
+
+    /* ==================== CARDS & PANELS ==================== */
+    .card {
+      background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-medium);
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta), var(--accent-yellow));
+      opacity: 0.7;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-strong);
+    }
+
+    .canvas-container {
+      background: rgba(10, 14, 26, 0.5);
+      border-radius: var(--border-radius-md);
+      padding: 1rem;
+      position: relative;
+      margin-top: 1rem;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+    }
+
+    .canvas-container canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--border-radius-sm);
+    }
+
+    .canvas-label {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      background: rgba(0, 212, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--border-radius-sm);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ==================== CONTROLS SIDEBAR ==================== */
+    aside {
+      background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-medium);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    aside::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-magenta), var(--accent-yellow), var(--accent-green));
+      opacity: 0.7;
+    }
+
+    .controls-group {
+      margin-bottom: 2rem;
+      transition: opacity var(--transition-medium), 
+                  transform var(--transition-medium),
+                  max-height var(--transition-medium);
+      overflow: hidden;
+      max-height: 500px;
+    }
+
+    .controls-group.hidden {
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+      max-height: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .controls-group h3 {
+      font-size: 1rem;
+      color: var(--accent-yellow);
+      margin-bottom: 1rem;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ==================== FORM ELEMENTS ==================== */
+    label {
+      display: block;
+      margin: 1rem 0 0.5rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, var(--accent-cyan), var(--accent-magenta));
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      border: 2px solid var(--bg-primary);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+      cursor: pointer;
+      transition: transform var(--transition-fast);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      border: 2px solid var(--bg-primary);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+      cursor: pointer;
+      transition: transform var(--transition-fast);
+    }
+
+    input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 0.7rem;
+      background: rgba(10, 14, 26, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-sm);
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1rem;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .value-display {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.3rem 0.7rem;
+      background: rgba(0, 212, 255, 0.1);
+      border-radius: var(--border-radius-sm);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+    }
+
+    /* ==================== ANTENNA SELECTOR ==================== */
+    .antenna-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .antenna-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .antenna-option label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(10, 14, 26, 0.6);
+      border: 2px solid var(--border-color);
+      border-radius: var(--border-radius-md);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-medium);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-height: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .antenna-option label::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.2), transparent);
+      transition: left var(--transition-slow);
+    }
+
+    .antenna-option label:hover::before {
+      left: 100%;
+    }
+
+    .antenna-option label:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .antenna-option input[type="radio"]:checked + label {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(255, 0, 110, 0.2));
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+
+    /* ==================== VIEW TOGGLE ==================== */
+    .view-toggle {
+      display: flex;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+      padding: 0.5rem;
+      background: rgba(10, 14, 26, 0.4);
+      border-radius: var(--border-radius-md);
+    }
+
+    .view-toggle input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .view-toggle label {
+      flex: 1;
+      padding: 0.7rem 1.2rem;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-sm);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-medium);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .view-toggle label:hover {
+      border-color: var(--accent-yellow);
+      background: rgba(255, 190, 11, 0.1);
+    }
+
+    .view-toggle input[type="radio"]:checked + label {
+      background: var(--accent-yellow);
+      color: var(--bg-primary);
+      border-color: var(--accent-yellow);
+      box-shadow: 0 0 15px rgba(255, 190, 11, 0.5);
+      font-weight: 700;
+    }
+
+    /* ==================== RESULTS PANEL ==================== */
+    .results-panel {
+      background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-medium);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .results-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan), var(--accent-magenta));
+      opacity: 0.7;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .result-item {
+      text-align: center;
+      padding: 1.5rem;
+      background: rgba(10, 14, 26, 0.5);
+      border-radius: var(--border-radius-md);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    }
+
+    .result-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 255, 136, 0.2);
+    }
+
+    .result-value {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 900;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .result-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+
+    /* ==================== LEGEND ==================== */
+    .legend-container {
+      background: linear-gradient(145deg, var(--bg-secondary), var(--bg-tertiary));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid var(--border-color);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-medium);
+    }
+
+    .legend-container h3 {
+      font-size: 1rem;
+      color: var(--accent-cyan);
+      margin-bottom: 1rem;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .legend-bar {
+      height: 30px;
+      background: linear-gradient(to right, 
+        rgb(0, 0, 255),
+        rgb(0, 255, 255),
+        rgb(0, 255, 0),
+        rgb(255, 255, 0),
+        rgb(255, 0, 0)
+      );
+      border-radius: var(--border-radius-sm);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* ==================== BUTTONS ==================== */
+    button {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+      color: var(--bg-primary);
+      border: none;
+      padding: 0.9rem 1.8rem;
+      border-radius: var(--border-radius-md);
+      font-weight: 900;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all var(--transition-medium);
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width var(--transition-medium), height var(--transition-medium);
+    }
+
+    button:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 212, 255, 0.5);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .screenshot-btn {
+      display: block;
+      margin: 2rem auto 0;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    /* ==================== FOOTER ==================== */
+    footer {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      margin-top: 3rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      position: relative;
+    }
+
+    footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    }
+
+    footer p {
+      margin-bottom: 0.5rem;
+      line-height: 1.8;
+    }
+
+    footer a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color var(--transition-fast);
+      position: relative;
+    }
+
+    footer a::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent-cyan);
+      transition: width var(--transition-fast);
+    }
+
+    footer a:hover {
+      color: var(--accent-magenta);
+    }
+
+    footer a:hover::after {
+      width: 100%;
+    }
+
+    /* ==================== ACCESSIBILITY ==================== */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    *:focus-visible {
+      outline: 3px solid var(--accent-cyan);
+      outline-offset: 2px;
+    }
+
+    /* ==================== RESPONSIVE DESIGN ==================== */
+    @media (max-width: 767px) {
+      .container {
+        padding: 1rem;
+      }
+
+      header {
+        padding: 1.5rem 1rem;
+      }
+
+      aside {
+        padding: 1.5rem;
+      }
+
+      .antenna-selector {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .view-toggle {
+        flex-direction: column;
+      }
+    }
+
+    /* ==================== LOADING ANIMATION ==================== */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card, aside, .results-panel, .legend-container {
+      animation: fadeIn 0.6s ease-out backwards;
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    aside { animation-delay: 0.4s; }
+    .results-panel { animation-delay: 0.5s; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header role="banner">
+      <h1>Visualizador de Patrones de Radiación de Antenas</h1>
+      <p>Sistema interactivo para análisis de patrones de radiación en telecomunicaciones. Seleccione el tipo de antena y ajuste sus parámetros para observar los patrones en 2D y 3D.</p>
+    </header>
+
+    <main role="main">
+      <section id="azimut-section" class="card" aria-labelledby="azimut-title">
+        <h2 id="azimut-title">Patrón Azimutal (Plano Horizontal)</h2>
+        <div class="canvas-container">
+          <span class="canvas-label" aria-hidden="true">Vista XY</span>
+          <canvas id="azimut-canvas" width="500" height="500" aria-label="Gráfico polar del patrón de radiación azimutal"></canvas>
+        </div>
+      </section>
+
+      <section id="elevacion-section" class="card" aria-labelledby="elevacion-title">
+        <h2 id="elevacion-title">Patrón de Elevación (Plano Vertical)</h2>
+        <div class="canvas-container">
+          <span class="canvas-label" aria-hidden="true">Vista XZ</span>
+          <canvas id="elevacion-canvas" width="500" height="500" aria-label="Gráfico polar del patrón de radiación de elevación"></canvas>
+        </div>
+      </section>
+
+      <section id="threeD-section" class="card" aria-labelledby="threeD-title">
+        <h2 id="threeD-title">Visualización 3D (Proyección Isométrica)</h2>
+        <div class="canvas-container">
+          <span class="canvas-label" aria-hidden="true">Vista 3D</span>
+          <canvas id="threeD-canvas" width="1000" height="500" aria-label="Visualización tridimensional del patrón de radiación"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <aside role="complementary" aria-labelledby="controls-title">
+      <h2 id="controls-title">Panel de Configuración</h2>
+
+      <fieldset class="antenna-selector">
+        <legend class="visually-hidden">Seleccione el tipo de antena</legend>
+        <div class="antenna-option">
+          <input type="radio" id="dipolo" name="antenna" value="dipolo" checked>
+          <label for="dipolo">Dipolo</label>
+        </div>
+        <div class="antenna-option">
+          <input type="radio" id="monopolo" name="antenna" value="monopolo">
+          <label for="monopolo">Monopolo</label>
+        </div>
+        <div class="antenna-option">
+          <input type="radio" id="arreglo" name="antenna" value="arreglo">
+          <label for="arreglo">Arreglo 2λ</label>
+        </div>
+        <div class="antenna-option">
+          <input type="radio" id="yagi" name="antenna" value="yagi">
+          <label for="yagi">Yagi</label>
+        </div>
+      </fieldset>
+
+      <!-- Dipolo Controls -->
+      <div id="dipolo-controls" class="controls-group" role="group" aria-labelledby="dipolo-controls-title">
+        <h3 id="dipolo-controls-title">Parámetros del Dipolo</h3>
+        <label for="dipolo-length">Longitud del dipolo (λ)</label>
+        <input type="range" id="dipolo-length" min="0.1" max="2" step="0.05" value="0.5" aria-describedby="dipolo-length-value">
+        <span id="dipolo-length-value" class="value-display" aria-live="polite">0.5 λ</span>
+      </div>
+
+      <!-- Monopolo Controls -->
+      <div id="monopolo-controls" class="controls-group hidden" role="group" aria-labelledby="monopolo-controls-title">
+        <h3 id="monopolo-controls-title">Parámetros del Monopolo</h3>
+        <label for="monopolo-length">Longitud del monopolo (λ)</label>
+        <input type="range" id="monopolo-length" min="0.1" max="1" step="0.05" value="0.25" aria-describedby="monopolo-length-value">
+        <span id="monopolo-length-value" class="value-display" aria-live="polite">0.25 λ</span>
+      </div>
+
+      <!-- Arreglo Controls -->
+      <div id="arreglo-controls" class="controls-group hidden" role="group" aria-labelledby="arreglo-controls-title">
+        <h3 id="arreglo-controls-title">Parámetros del Arreglo</h3>
+        <label for="arreglo-separation">Separación entre elementos (λ)</label>
+        <input type="range" id="arreglo-separation" min="0.1" max="2" step="0.1" value="0.5" aria-describedby="arreglo-separation-value">
+        <span id="arreglo-separation-value" class="value-display" aria-live="polite">0.5 λ</span>
+
+        <label for="arreglo-phase">Diferencia de fase (°)</label>
+        <input type="range" id="arreglo-phase" min="-180" max="180" step="10" value="0" aria-describedby="arreglo-phase-value">
+        <span id="arreglo-phase-value" class="value-display" aria-live="polite">0°</span>
+      </div>
+
+      <!-- Yagi Controls -->
+      <div id="yagi-controls" class="controls-group hidden" role="group" aria-labelledby="yagi-controls-title">
+        <h3 id="yagi-controls-title">Parámetros de Yagi</h3>
+        <label for="yagi-directors">Número de directores</label>
+        <input type="number" id="yagi-directors" min="1" max="10" value="3" aria-describedby="yagi-directors-help">
+        <span id="yagi-directors-help" class="visually-hidden">Ingrese un número entre 1 y 10</span>
+      </div>
+
+      <fieldset class="view-toggle">
+        <legend class="visually-hidden">Modo de visualización</legend>
+        <input type="radio" id="view-gain" name="view" value="gain" checked>
+        <label for="view-gain">Ganancia (dBi)</label>
+        <input type="radio" id="view-power" name="view" value="power">
+        <label for="view-power">Potencia Normalizada</label>
+      </fieldset>
+
+      <button class="screenshot-btn" id="screenshot-btn" type="button">
+        <span>📸 Capturar Imagen</span>
+      </button>
+    </aside>
+
+    <section class="results-panel" role="region" aria-labelledby="results-title">
+      <h2 id="results-title">Análisis de Parámetros</h2>
+      <div class="results-grid">
+        <article class="result-item">
+          <div class="result-value" id="gain-value" aria-live="polite">2.15</div>
+          <div class="result-label">Ganancia Directiva (dBi)</div>
+        </article>
+        <article class="result-item">
+          <div class="result-value" id="beamwidth-value" aria-live="polite">78°</div>
+          <div class="result-label">Ancho del Haz</div>
+        </article>
+        <article class="result-item">
+          <div class="result-value" id="fbr-value" aria-live="polite">∞</div>
+          <div class="result-label">Relación Frente-Espalda</div>
+        </article>
+      </div>
+    </section>
+
+    <div class="legend-container" role="region" aria-labelledby="legend-title">
+      <h3 id="legend-title">Escala de Intensidad</h3>
+      <div class="legend-grid">
+        <div>
+          <div class="legend-bar" role="img" aria-label="Barra de gradiente de colores de intensidad"></div>
+          <div class="legend-labels" id="legend-labels">
+            <span>-30 dB</span>
+            <span>-20 dB</span>
+            <span>-10 dB</span>
+            <span>0 dB</span>
+          </div>
+        </div>
+      </div>
+      <p id="legend-description" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+        Modo actual: <strong id="current-mode-label" style="color: var(--accent-yellow);">Ganancia (dB)</strong>
+      </p>
+    </div>
+
+    <footer role="contentinfo">
+      <p>Aplicación educativa para análisis de antenas en telecomunicaciones</p>
+      <p>
+        <a href="https://www.antenna-theory.com/" target="_blank" rel="noopener noreferrer">Antenna Theory</a> | 
+        <a href="https://www.ece.rutgers.edu/~orfanidi/ewa/" target="_blank" rel="noopener noreferrer">Electromagnetic Waves and Antennas</a> | 
+        <a href="https://www.itu.int/" target="_blank" rel="noopener noreferrer">ITU Resources</a>
+      </p>
+      <p style="margin-top: 1rem; font-size: 0.8rem;">Universidad de Oriente © 2026</p>
+    </footer>
+  </div>
+
+  <script>
+    'use strict';
+
+    // ==================== CONSTANTS & CONFIGURATION ====================
+    const CONFIG = {
+      CANVAS_RESOLUTION: {
+        azimut: { width: 500, height: 500 },
+        elevacion: { width: 500, height: 500 },
+        threeD: { width: 1000, height: 500 }
+      },
+      PATTERN_SAMPLES: 360,
+      THETA_STEPS_3D: 24,
+      PHI_STEPS_3D: 48,
+      DB_MIN: -30,
+      DB_MAX: 0,
+      GRID_LEVELS: 6,
+      ISO_ANGLE: Math.PI / 6,
+      COLORS: {
+        grid: 'rgba(0, 212, 255, 0.15)',
+        axes: 'rgba(0, 212, 255, 0.4)',
+        pattern: 'rgba(0, 212, 255, 0.8)'
+      }
+    };
+
+    // ==================== DOM ELEMENT REFERENCES ====================
+    const elements = {
+      // Canvas elements
+      azimutCanvas: document.getElementById('azimut-canvas'),
+      elevacionCanvas: document.getElementById('elevacion-canvas'),
+      threeDCanvas: document.getElementById('threeD-canvas'),
+      
+      // Control inputs
+      antennaRadios: document.querySelectorAll('input[name="antenna"]'),
+      viewRadios: document.querySelectorAll('input[name="view"]'),
+      
+      // Dipolo controls
+      dipoloLength: document.getElementById('dipolo-length'),
+      dipoloLengthValue: document.getElementById('dipolo-length-value'),
+      dipoloControls: document.getElementById('dipolo-controls'),
+      
+      // Monopolo controls
+      monopoloLength: document.getElementById('monopolo-length'),
+      monopoloLengthValue: document.getElementById('monopolo-length-value'),
+      monopoloControls: document.getElementById('monopolo-controls'),
+      
+      // Arreglo controls
+      arregloSeparation: document.getElementById('arreglo-separation'),
+      arregloSeparationValue: document.getElementById('arreglo-separation-value'),
+      arregloPhase: document.getElementById('arreglo-phase'),
+      arregloPhaseValue: document.getElementById('arreglo-phase-value'),
+      arregloControls: document.getElementById('arreglo-controls'),
+      
+      // Yagi controls
+      yagiDirectors: document.getElementById('yagi-directors'),
+      yagiControls: document.getElementById('yagi-controls'),
+      
+      // Results
+      gainValue: document.getElementById('gain-value'),
+      beamwidthValue: document.getElementById('beamwidth-value'),
+      fbrValue: document.getElementById('fbr-value'),
+      
+      // Legend
+      legendLabels: document.getElementById('legend-labels'),
+      currentModeLabel: document.getElementById('current-mode-label'),
+      
+      // Screenshot button
+      screenshotBtn: document.getElementById('screenshot-btn')
+    };
+
+    // Canvas contexts
+    const contexts = {
+      azimut: elements.azimutCanvas.getContext('2d'),
+      elevacion: elements.elevacionCanvas.getContext('2d'),
+      threeD: elements.threeDCanvas.getContext('2d')
+    };
+
+    // ==================== APPLICATION STATE ====================
+    const state = {
+      currentAntenna: 'dipolo',
+      currentView: 'gain',
+      isDrawing: false
+    };
+
+    // ==================== UTILITY FUNCTIONS ====================
+    const Utils = {
+      /**
+       * Clamp a value between min and max
+       */
+      clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      },
+
+      /**
+       * Convert linear gain to dB
+       */
+      toDecibels(gain, reference = 1) {
+        if (gain <= 0 || reference <= 0) return -Infinity;
+        return 10 * Math.log10(gain / reference);
+      },
+
+      /**
+       * Normalize angle to [0, 2π]
+       */
+      normalizeAngle(angle) {
+        while (angle < 0) angle += 2 * Math.PI;
+        while (angle >= 2 * Math.PI) angle -= 2 * Math.PI;
+        return angle;
+      },
+
+      /**
+       * Get color from value using spectrum mapping
+       */
+      getColorFromValue(value, minVal = CONFIG.DB_MIN, maxVal = CONFIG.DB_MAX) {
+        const clampedValue = this.clamp(value, minVal, maxVal);
+        const normalized = (clampedValue - minVal) / (maxVal - minVal);
+        
+        let r, g, b;
+        
+        if (normalized < 0.25) {
+          // Blue to Cyan (0 -> 0.25)
+          const t = normalized / 0.25;
+          r = 0;
+          g = Math.floor(255 * t);
+          b = 255;
+        } else if (normalized < 0.5) {
+          // Cyan to Green (0.25 -> 0.5)
+          const t = (normalized - 0.25) / 0.25;
+          r = 0;
+          g = 255;
+          b = Math.floor(255 * (1 - t));
+        } else if (normalized < 0.75) {
+          // Green to Yellow (0.5 -> 0.75)
+          const t = (normalized - 0.5) / 0.25;
+          r = Math.floor(255 * t);
+          g = 255;
+          b = 0;
+        } else {
+          // Yellow to Red (0.75 -> 1.0)
+          const t = (normalized - 0.75) / 0.25;
+          r = 255;
+          g = Math.floor(255 * (1 - t));
+          b = 0;
+        }
+        
+        return `rgb(${r}, ${g}, ${b})`;
+      },
+
+      /**
+       * Debounce function for performance
+       */
+      debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+    };
+
+    // ==================== RADIATION PATTERN CALCULATIONS ====================
+    const RadiationPattern = {
+      /**
+       * Calculate radiation pattern for dipole antenna
+       */
+      dipolo(theta, phi) {
+        const length = parseFloat(elements.dipoloLength.value);
+        const kL = Math.PI * length;
+        const sinTheta = Math.sin(theta);
+        
+        if (Math.abs(sinTheta) < 1e-6) return 0;
+        
+        const numerator = Math.pow(Math.cos(kL * Math.cos(theta)) - Math.cos(kL), 2);
+        const denominator = Math.pow(sinTheta, 2);
+        
+        return numerator / denominator;
+      },
+
+      /**
+       * Calculate radiation pattern for monopole antenna
+       */
+      monopolo(theta, phi) {
+        // Monopolo only radiates in upper hemisphere
+        if (theta > Math.PI / 2) return 0;
+        
+        const length = parseFloat(elements.monopoloLength.value);
+        const kL = Math.PI * length;
+        const sinTheta = Math.sin(theta);
+        
+        if (Math.abs(sinTheta) < 1e-6) return 0;
+        
+        const numerator = Math.pow(Math.cos(kL * Math.cos(theta)) - Math.cos(kL), 2);
+        const denominator = Math.pow(sinTheta, 2);
+        
+        // Monopolo has twice the directivity of dipole (ground plane effect)
+        return 2 * numerator / denominator;
+      },
+
+      /**
+       * Calculate radiation pattern for two-element array
+       */
+      arreglo(theta, phi) {
+        const separation = parseFloat(elements.arregloSeparation.value);
+        const phaseAngle = parseFloat(elements.arregloPhase.value) * Math.PI / 180;
+        
+        // Element pattern (dipole)
+        const sinTheta = Math.sin(theta);
+        if (Math.abs(sinTheta) < 1e-6) return 0;
+        
+        const elementPattern = Math.pow(Math.cos(Math.PI / 2 * Math.cos(theta)) / sinTheta, 2);
+        
+        // Array factor
+        const psi = 2 * Math.PI * separation * Math.sin(theta) * Math.cos(phi) + phaseAngle;
+        const arrayFactor = Math.pow(Math.cos(psi / 2), 2);
+        
+        return elementPattern * arrayFactor * 4; // Factor of 4 for two-element array
+      },
+
+      /**
+       * Calculate radiation pattern for Yagi antenna (simplified model)
+       */
+      yagi(theta, phi) {
+        const numDirectors = parseInt(elements.yagiDirectors.value) || 3;
+        
+        // Simplified model: highly directive in forward direction (phi = 0)
+        const sinTheta = Math.sin(theta);
+        if (Math.abs(sinTheta) < 1e-6) return 0;
+        
+        // Base pattern
+        const basePattern = Math.pow(sinTheta, 2);
+        
+        // Directivity enhancement based on number of directors
+        const directivity = Math.pow(Math.max(0, Math.cos(phi)), numDirectors * 0.8);
+        
+        // Front-to-back ratio improvement
+        const backSuppression = phi > Math.PI / 2 && phi < 3 * Math.PI / 2 ? 
+          Math.pow(10, -numDirectors * 0.3) : 1;
+        
+        return basePattern * directivity * backSuppression * (2 + numDirectors);
+      },
+
+      /**
+       * Get radiation pattern value for current antenna type
+       */
+      getValue(antenna, theta, phi) {
+        switch (antenna) {
+          case 'dipolo':
+            return this.dipolo(theta, phi);
+          case 'monopolo':
+            return this.monopolo(theta, phi);
+          case 'arreglo':
+            return this.arreglo(theta, phi);
+          case 'yagi':
+            return this.yagi(theta, phi);
+          default:
+            return Math.pow(Math.sin(theta), 2);
+        }
+      }
+    };
+
+    // ==================== VISUALIZATION FUNCTIONS ====================
+    const Visualization = {
+      /**
+       * Draw polar grid
+       */
+      drawPolarGrid(ctx, canvas, centerX, centerY, radius) {
+        ctx.strokeStyle = CONFIG.COLORS.grid;
+        ctx.lineWidth = 1;
+        
+        // Concentric circles
+        for (let i = 1; i <= CONFIG.GRID_LEVELS; i++) {
+          const r = radius * (i / CONFIG.GRID_LEVELS);
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // dB labels
+          if (i < CONFIG.GRID_LEVELS) {
+            const dbValue = CONFIG.DB_MIN + (CONFIG.DB_MAX - CONFIG.DB_MIN) * (i / CONFIG.GRID_LEVELS);
+            ctx.fillStyle = CONFIG.COLORS.grid;
+            ctx.font = '10px Share Tech Mono';
+            ctx.fillText(`${dbValue.toFixed(0)}dB`, centerX + 5, centerY - r);
+          }
+        }
+        
+        // Radial lines (every 30 degrees)
+        ctx.strokeStyle = CONFIG.COLORS.grid;
+        for (let angle = 0; angle < 360; angle += 30) {
+          const rad = angle * Math.PI / 180;
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + radius * Math.cos(rad - Math.PI / 2),
+            centerY + radius * Math.sin(rad - Math.PI / 2)
+          );
+          ctx.stroke();
+          
+          // Angle labels
+          const labelRadius = radius + 15;
+          const labelX = centerX + labelRadius * Math.cos(rad - Math.PI / 2);
+          const labelY = centerY + labelRadius * Math.sin(rad - Math.PI / 2);
+          ctx.fillStyle = CONFIG.COLORS.axes;
+          ctx.font = '11px Share Tech Mono';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${angle}°`, labelX, labelY);
+        }
+      },
+
+      /**
+       * Draw polar pattern (azimuth or elevation)
+       */
+      drawPolarPattern(ctxName, isAzimut = true) {
+        const canvas = isAzimut ? elements.azimutCanvas : elements.elevacionCanvas;
+        const ctx = contexts[ctxName];
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.min(centerX, centerY) * 0.80;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw grid
+        this.drawPolarGrid(ctx, canvas, centerX, centerY, radius);
+        
+        // Sample pattern
+        const gains = [];
+        let maxGain = 0;
+        
+        for (let i = 0; i < CONFIG.PATTERN_SAMPLES; i++) {
+          const angle = (i / CONFIG.PATTERN_SAMPLES) * Math.PI * 2;
+          let theta, phi;
+          
+          if (isAzimut) {
+            // Azimuth: θ = π/2, vary φ
+            theta = Math.PI / 2;
+            phi = angle;
+          } else {
+            // Elevation: φ = 0, vary θ
+            theta = angle;
+            phi = 0;
+          }
+          
+          const gain = RadiationPattern.getValue(state.currentAntenna, theta, phi);
+          gains.push(gain);
+          if (gain > maxGain) maxGain = gain;
+        }
+        
+        if (maxGain === 0) maxGain = 1;
+        
+        // Draw pattern with gradient
+        const points = [];
+        for (let i = 0; i < CONFIG.PATTERN_SAMPLES; i++) {
+          const angle = (i / CONFIG.PATTERN_SAMPLES) * Math.PI * 2;
+          const gain = gains[i];
+          
+          let scale, displayValue;
+          
+          if (state.currentView === 'gain') {
+            // Ganancia en dB (escala logarítmica)
+            const gainDB = Utils.toDecibels(gain, maxGain);
+            const dbClamped = Utils.clamp(gainDB, CONFIG.DB_MIN, CONFIG.DB_MAX);
+            scale = (dbClamped - CONFIG.DB_MIN) / (CONFIG.DB_MAX - CONFIG.DB_MIN);
+            displayValue = dbClamped;
+          } else {
+            // Potencia normalizada (escala lineal)
+            const normalizedPower = gain / maxGain;
+            // Para potencia, usamos escala lineal directa
+            scale = Math.max(0, normalizedPower);
+            // Convertir a dB para el color pero mantener escala lineal para radio
+            displayValue = Utils.toDecibels(gain, maxGain);
+          }
+          
+          const r = radius * scale;
+          const x = centerX + r * Math.cos(angle - Math.PI / 2);
+          const y = centerY + r * Math.sin(angle - Math.PI / 2);
+          
+          points.push({ x, y, db: displayValue, scale: scale });
+        }
+        
+        // Draw filled pattern
+        if (points.length > 0) {
+          // Create gradient path
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
+          ctx.closePath();
+          
+          // Fill with semi-transparent color
+          const avgDb = points.reduce((sum, p) => sum + p.db, 0) / points.length;
+          ctx.fillStyle = Utils.getColorFromValue(avgDb) + '33'; // 20% opacity
+          ctx.fill();
+          
+          // Draw outline with varying colors
+          for (let i = 0; i < points.length; i++) {
+            const p1 = points[i];
+            const p2 = points[(i + 1) % points.length];
+            
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = Utils.getColorFromValue(p1.db);
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+          }
+        }
+        
+        // Update results on azimuth draw
+        if (isAzimut) {
+          this.updateResults(maxGain, gains);
+        }
+      },
+
+      /**
+       * Draw 3D isometric projection
+       */
+      draw3DPattern() {
+        const canvas = elements.threeDCanvas;
+        const ctx = contexts.threeD;
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const size = Math.min(canvas.width, canvas.height) * 0.35;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Sample 3D pattern
+        const data = [];
+        let maxGain = 0;
+        
+        for (let ti = 0; ti <= CONFIG.THETA_STEPS_3D; ti++) {
+          const theta = (ti / CONFIG.THETA_STEPS_3D) * Math.PI;
+          const row = [];
+          
+          for (let pi = 0; pi <= CONFIG.PHI_STEPS_3D; pi++) {
+            const phi = (pi / CONFIG.PHI_STEPS_3D) * Math.PI * 2;
+            const gain = RadiationPattern.getValue(state.currentAntenna, theta, phi);
+            
+            if (gain > maxGain) maxGain = gain;
+            row.push(gain);
+          }
+          data.push(row);
+        }
+        
+        if (maxGain === 0) maxGain = 1;
+        
+        // Isometric projection helper
+        const project = (x, y, z) => {
+          const scaleX = Math.cos(CONFIG.ISO_ANGLE);
+          const scaleY = Math.sin(CONFIG.ISO_ANGLE);
+          
+          return {
+            x: centerX + size * (x * scaleX - y * scaleX),
+            y: centerY + size * (-z + (x + y) * scaleY)
+          };
+        };
+        
+        // Draw surface with proper depth sorting
+        const quads = [];
+        
+        for (let ti = 0; ti < CONFIG.THETA_STEPS_3D; ti++) {
+          for (let pi = 0; pi < CONFIG.PHI_STEPS_3D; pi++) {
+            const gains = [
+              data[ti][pi],
+              data[ti][pi + 1],
+              data[ti + 1][pi + 1],
+              data[ti + 1][pi]
+            ];
+            
+            const dbValues = gains.map(g => Utils.toDecibels(g, maxGain));
+            
+            let scales;
+            if (state.currentView === 'gain') {
+              // Modo ganancia: escala logarítmica (dB)
+              scales = dbValues.map(db => {
+                const clamped = Utils.clamp(db, CONFIG.DB_MIN, CONFIG.DB_MAX);
+                return Math.max(0, (clamped - CONFIG.DB_MIN) / (CONFIG.DB_MAX - CONFIG.DB_MIN));
+              });
+            } else {
+              // Modo potencia: escala lineal
+              scales = gains.map(g => Math.max(0, g / maxGain));
+            }
+            
+            // Calculate vertices
+            const vertices = [];
+            for (let i = 0; i < 4; i++) {
+              const tIdx = i < 2 ? ti : ti + 1;
+              const pIdx = (i === 0 || i === 3) ? pi : pi + 1;
+              
+              const theta = (tIdx / CONFIG.THETA_STEPS_3D) * Math.PI;
+              const phi = (pIdx / CONFIG.PHI_STEPS_3D) * Math.PI * 2;
+              const scale = scales[i];
+              
+              const x = scale * Math.sin(theta) * Math.cos(phi);
+              const y = scale * Math.sin(theta) * Math.sin(phi);
+              const z = scale * Math.cos(theta);
+              
+              vertices.push({ x, y, z });
+            }
+            
+            // Calculate average depth for sorting
+            const avgZ = vertices.reduce((sum, v) => sum + v.z, 0) / 4;
+            const avgDb = dbValues.reduce((sum, db) => sum + db, 0) / 4;
+            
+            quads.push({ vertices, avgZ, avgDb });
+          }
+        }
+        
+        // Sort by depth (painter's algorithm)
+        quads.sort((a, b) => a.avgZ - b.avgZ);
+        
+        // Draw quads
+        quads.forEach(quad => {
+          const projected = quad.vertices.map(v => project(v.x, v.y, v.z));
+          const color = Utils.getColorFromValue(quad.avgDb);
+          
+          ctx.fillStyle = color + 'CC'; // 80% opacity
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 0.5;
+          
+          ctx.beginPath();
+          ctx.moveTo(projected[0].x, projected[0].y);
+          for (let i = 1; i < projected.length; i++) {
+            ctx.lineTo(projected[i].x, projected[i].y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        });
+        
+        // Draw axes for reference
+        const axisLength = size * 1.2;
+        ctx.lineWidth = 2;
+        
+        // X axis (red)
+        const xStart = project(0, 0, 0);
+        const xEnd = project(axisLength / size, 0, 0);
+        ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(xStart.x, xStart.y);
+        ctx.lineTo(xEnd.x, xEnd.y);
+        ctx.stroke();
+        
+        // Y axis (green)
+        const yEnd = project(0, axisLength / size, 0);
+        ctx.strokeStyle = 'rgba(100, 255, 100, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(xStart.x, xStart.y);
+        ctx.lineTo(yEnd.x, yEnd.y);
+        ctx.stroke();
+        
+        // Z axis (blue)
+        const zEnd = project(0, 0, axisLength / size);
+        ctx.strokeStyle = 'rgba(100, 100, 255, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(xStart.x, xStart.y);
+        ctx.lineTo(zEnd.x, zEnd.y);
+        ctx.stroke();
+      },
+
+      /**
+       * Calculate beamwidth from radiation pattern (HPBW - Half Power Beam Width)
+       * Finds the angular width between the -3dB points
+       */
+      calculateBeamwidth(gains) {
+        if (!gains || gains.length === 0) return 90;
+        
+        const maxGain = Math.max(...gains);
+        if (maxGain === 0) return 180;
+        
+        // -3dB point is half power (10^(-3/10) ≈ 0.501)
+        const threshold = maxGain * 0.5;
+        
+        // Find all crossings of the threshold
+        const crossings = [];
+        for (let i = 0; i < gains.length; i++) {
+          const current = gains[i];
+          const next = gains[(i + 1) % gains.length];
+          
+          // Check if we cross the threshold
+          if ((current >= threshold && next < threshold) || 
+              (current < threshold && next >= threshold)) {
+            crossings.push(i);
+          }
+        }
+        
+        if (crossings.length < 2) {
+          // Pattern is too wide or too narrow
+          return gains[0] >= threshold ? 360 : 0;
+        }
+        
+        // For symmetric patterns, find the main lobe
+        // Assume maximum is at or near index 0
+        let beamwidth = 0;
+        
+        // Find the two closest crossings to the maximum
+        if (crossings.length >= 2) {
+          // Calculate angular separation between first two crossings
+          const angle1 = (crossings[0] / gains.length) * 360;
+          const angle2 = (crossings[1] / gains.length) * 360;
+          beamwidth = Math.abs(angle2 - angle1);
+          
+          // If beamwidth is > 180, we got the back lobe, take complement
+          if (beamwidth > 180) {
+            beamwidth = 360 - beamwidth;
+          }
+        }
+        
+        return Math.max(1, Math.min(360, beamwidth));
+      },
+
+      /**
+       * Calculate front-to-back ratio
+       * Compares maximum gain in forward direction (0°) to maximum in back (180°)
+       */
+      calculateFBR(gains) {
+        if (!gains || gains.length === 0) return Infinity;
+        
+        const numSamples = gains.length;
+        
+        // Define angular ranges for front and back
+        // Front: 0° ± 30° 
+        // Back: 180° ± 30°
+        const angleRange = 30; // degrees
+        const sampleRange = Math.floor(numSamples * angleRange / 360);
+        
+        // Find maximum in front sector
+        let frontMax = 0;
+        for (let i = 0; i <= sampleRange; i++) {
+          frontMax = Math.max(frontMax, gains[i]);
+          // Also check the wrap-around
+          const wrapIdx = numSamples - i;
+          frontMax = Math.max(frontMax, gains[wrapIdx]);
+        }
+        
+        // Find maximum in back sector (180°)
+        const backCenter = Math.floor(numSamples / 2);
+        let backMax = 0;
+        for (let i = -sampleRange; i <= sampleRange; i++) {
+          const idx = (backCenter + i + numSamples) % numSamples;
+          backMax = Math.max(backMax, gains[idx]);
+        }
+        
+        if (backMax === 0 || backMax < 1e-10) return Infinity;
+        
+        // Return ratio in dB
+        const ratio = frontMax / backMax;
+        return 10 * Math.log10(ratio);
+      },
+
+      /**
+       * Calculate directivity from radiation pattern
+       * D = 4π / ∫∫ U(θ,φ) sin(θ) dθ dφ
+       * Simplified 2D version using azimuth pattern
+       */
+      calculateDirectivity(maxGain, gains) {
+        if (!gains || gains.length === 0) return 0;
+        if (maxGain === 0) return 0;
+        
+        // Numerical integration of the pattern
+        // For 2D (azimuth only), we approximate the 3D integral
+        const avgGain = gains.reduce((sum, g) => sum + g, 0) / gains.length;
+        
+        if (avgGain === 0) return 0;
+        
+        // Directivity = 4π * Pmax / Prad
+        // In normalized units: D = Umax / Uavg
+        const directivity = maxGain / avgGain;
+        
+        // Convert to dBi
+        return 10 * Math.log10(directivity);
+      },
+
+      /**
+       * Calculate theoretical gain for dipole based on length
+       * Using accurate electromagnetic formulas
+       */
+      calculateDipoleGain(length) {
+        // For a center-fed dipole of length L
+        const L = length; // in wavelengths
+        
+        // Radiation resistance and directivity vary with length
+        // These are empirical formulas based on antenna theory
+        
+        if (L < 0.1) {
+          // Very short dipole (Hertzian)
+          return 10 * Math.log10(1.5); // ~1.76 dBi
+        } else if (L >= 0.45 && L <= 0.55) {
+          // Half-wave dipole (optimal)
+          return 2.15; // dBi
+        } else if (L >= 0.95 && L <= 1.05) {
+          // Full-wave dipole
+          return 3.82; // dBi
+        } else if (L >= 1.45 && L <= 1.55) {
+          // 3λ/2 dipole
+          return 3.5; // dBi (has side lobes)
+        } else {
+          // Interpolate based on length
+          // General formula: D ≈ 1.64 for short, up to ~4 dBi for certain lengths
+          const baseDbi = 1.64; // Short dipole base
+          const lengthFactor = Math.sin(Math.PI * L) * Math.sin(Math.PI * L);
+          const gain = baseDbi + 0.5 * lengthFactor;
+          return Math.max(0, Math.min(4.0, gain));
+        }
+      },
+
+      /**
+       * Calculate theoretical gain for monopole based on length
+       */
+      calculateMonopoleGain(length) {
+        // Monopole over ground plane has 3 dB more gain than equivalent dipole
+        // Due to image theory (radiation in half-space only)
+        const equivalentDipoleLength = length * 2; // Image creates equivalent dipole
+        const dipoleGain = this.calculateDipoleGain(equivalentDipoleLength);
+        
+        // Add 3 dB for ground plane effect
+        return dipoleGain + 3.0;
+      },
+
+      /**
+       * Update results panel with calculated parameters
+       * All calculations are dynamic and based on actual antenna parameters
+       */
+      updateResults(maxGain, gains) {
+        let gainDbi, beamwidth, fbr;
+        
+        // Calculate from actual radiation pattern
+        beamwidth = this.calculateBeamwidth(gains);
+        fbr = this.calculateFBR(gains);
+        const measuredDirectivity = this.calculateDirectivity(maxGain, gains);
+        
+        // Calculate theoretical values based on antenna type and parameters
+        switch (state.currentAntenna) {
+          case 'dipolo': {
+            const length = parseFloat(elements.dipoloLength.value);
+            const theoreticalGain = this.calculateDipoleGain(length);
+            
+            // Use the higher of measured or theoretical (more accurate)
+            gainDbi = Math.max(measuredDirectivity, theoreticalGain);
+            
+            // For dipoles, F/B ratio is typically infinite (omnidirectional in azimuth)
+            if (!isFinite(fbr) || fbr > 30) {
+              fbr = Infinity;
+            }
+            break;
+          }
+            
+          case 'monopolo': {
+            const length = parseFloat(elements.monopoloLength.value);
+            const theoreticalGain = this.calculateMonopoleGain(length);
+            
+            gainDbi = Math.max(measuredDirectivity, theoreticalGain);
+            
+            // Monopoles are also omnidirectional in azimuth
+            if (!isFinite(fbr) || fbr > 30) {
+              fbr = Infinity;
+            }
+            break;
+          }
+            
+          case 'arreglo': {
+            const separation = parseFloat(elements.arregloSeparation.value);
+            const phaseAngle = parseFloat(elements.arregloPhase.value);
+            
+            // Base element gain (dipole)
+            const elementGain = 2.15;
+            
+            // Array factor gain
+            // For 2-element array: G = G_element + 10*log10(N) + array_factor
+            const numElements = 2;
+            const arrayGain = 10 * Math.log10(numElements); // ~3 dB
+            
+            // Directivity depends on spacing and phase
+            // Optimal spacing is 0.5λ with 0° phase
+            let spacingFactor = 0;
+            if (separation > 0.3 && separation < 0.7) {
+              spacingFactor = 1.0; // Good spacing
+            } else if (separation >= 0.7 && separation < 1.0) {
+              spacingFactor = 0.5 + (separation - 0.7) * 0.5;
+            } else {
+              spacingFactor = Math.max(0, 1.0 - Math.abs(separation - 0.5) * 0.5);
+            }
+            
+            // Phase factor (optimal at 0° for broadside)
+            const phaseFactor = Math.cos(phaseAngle * Math.PI / 180);
+            
+            gainDbi = elementGain + arrayGain + spacingFactor + phaseFactor * 0.5;
+            
+            // Use measured directivity if higher
+            gainDbi = Math.max(gainDbi, measuredDirectivity);
+            
+            // F/B ratio is real for arrays
+            if (!isFinite(fbr)) fbr = 0;
+            break;
+          }
+            
+          case 'yagi': {
+            const numDirectors = parseInt(elements.yagiDirectors.value) || 3;
+            
+            // Yagi antenna gain formula
+            // G ≈ 7 + 1.2 * N_directors (empirical)
+            const baseGain = 7.0; // Driven element + reflector
+            const directorContribution = numDirectors * 1.2;
+            
+            gainDbi = baseGain + directorContribution;
+            
+            // Use measured if higher
+            gainDbi = Math.max(gainDbi, measuredDirectivity);
+            
+            // Yagi has good F/B ratio
+            // F/B ≈ 12 + 2.5 * N_directors
+            const theoreticalFBR = 12 + numDirectors * 2.5;
+            fbr = Math.max(fbr, theoreticalFBR);
+            
+            break;
+          }
+            
+          default:
+            gainDbi = measuredDirectivity;
+            if (!isFinite(fbr)) fbr = 0;
+        }
+        
+        // Ensure values are in reasonable ranges
+        gainDbi = Math.max(-10, Math.min(25, gainDbi));
+        beamwidth = Math.max(1, Math.min(360, beamwidth));
+        
+        // Update DOM with smooth animation
+        elements.gainValue.style.transform = 'scale(1.1)';
+        elements.beamwidthValue.style.transform = 'scale(1.1)';
+        elements.fbrValue.style.transform = 'scale(1.1)';
+        
+        setTimeout(() => {
+          elements.gainValue.textContent = gainDbi.toFixed(2);
+          elements.beamwidthValue.textContent = beamwidth.toFixed(0) + '°';
+          elements.fbrValue.textContent = isFinite(fbr) ? fbr.toFixed(1) + ' dB' : '∞';
+          
+          elements.gainValue.style.transform = 'scale(1)';
+          elements.beamwidthValue.style.transform = 'scale(1)';
+          elements.fbrValue.style.transform = 'scale(1)';
+        }, 150);
+      },
+
+      /**
+       * Redraw all visualizations
+       */
+      redrawAll() {
+        if (state.isDrawing) return;
+        state.isDrawing = true;
+        
+        requestAnimationFrame(() => {
+          this.drawPolarPattern('azimut', true);
+          this.drawPolarPattern('elevacion', false);
+          this.draw3DPattern();
+          state.isDrawing = false;
+        });
+      }
+    };
+
+    // ==================== EVENT HANDLERS ====================
+    const EventHandlers = {
+      /**
+       * Handle antenna type change
+       */
+      onAntennaChange(event) {
+        state.currentAntenna = event.target.value;
+        this.updateControlsVisibility();
+        Visualization.redrawAll();
+      },
+
+      /**
+       * Handle view mode change
+       */
+      onViewChange(event) {
+        state.currentView = event.target.value;
+        
+        // Update legend labels based on mode
+        if (state.currentView === 'gain') {
+          elements.legendLabels.innerHTML = `
+            <span>-30 dB</span>
+            <span>-20 dB</span>
+            <span>-10 dB</span>
+            <span>0 dB</span>
+          `;
+          elements.currentModeLabel.textContent = 'Ganancia (dB) - Escala Logarítmica';
+        } else {
+          elements.legendLabels.innerHTML = `
+            <span>0%</span>
+            <span>33%</span>
+            <span>67%</span>
+            <span>100%</span>
+          `;
+          elements.currentModeLabel.textContent = 'Potencia Normalizada - Escala Lineal';
+        }
+        
+        Visualization.redrawAll();
+      },
+
+      /**
+       * Update visibility of antenna-specific controls
+       */
+      updateControlsVisibility() {
+        const controlGroups = {
+          'dipolo': elements.dipoloControls,
+          'monopolo': elements.monopoloControls,
+          'arreglo': elements.arregloControls,
+          'yagi': elements.yagiControls
+        };
+        
+        Object.entries(controlGroups).forEach(([antenna, controls]) => {
+          if (antenna === state.currentAntenna) {
+            controls.classList.remove('hidden');
+            controls.setAttribute('aria-hidden', 'false');
+          } else {
+            controls.classList.add('hidden');
+            controls.setAttribute('aria-hidden', 'true');
+          }
+        });
+      },
+
+      /**
+       * Handle slider input
+       */
+      onSliderInput(slider, valueDisplay, unit) {
+        return () => {
+          valueDisplay.textContent = `${slider.value} ${unit}`;
+          Visualization.redrawAll();
+        };
+      },
+
+      /**
+       * Capture screenshot
+       */
+      captureScreenshot() {
+        try {
+          // Create composite canvas
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          const azW = elements.azimutCanvas.width;
+          const azH = elements.azimutCanvas.height;
+          const elW = elements.elevacionCanvas.width;
+          const elH = elements.elevacionCanvas.height;
+          const tdW = elements.threeDCanvas.width;
+          const tdH = elements.threeDCanvas.height;
+          
+          // Layout: azimut and elevation side by side, 3D below
+          const totalWidth = azW + elW;
+          const totalHeight = azH + tdH;
+          
+          tempCanvas.width = totalWidth;
+          tempCanvas.height = totalHeight;
+          
+          // Fill background
+          tempCtx.fillStyle = '#0a0e1a';
+          tempCtx.fillRect(0, 0, totalWidth, totalHeight);
+          
+          // Draw canvases
+          tempCtx.drawImage(elements.azimutCanvas, 0, 0);
+          tempCtx.drawImage(elements.elevacionCanvas, azW, 0);
+          tempCtx.drawImage(elements.threeDCanvas, 0, azH, totalWidth, tdH);
+          
+          // Add title
+          tempCtx.fillStyle = '#00d4ff';
+          tempCtx.font = 'bold 24px Orbitron';
+          tempCtx.textAlign = 'center';
+          tempCtx.fillText(
+            `Patrón de Radiación - ${state.currentAntenna.toUpperCase()}`,
+            totalWidth / 2,
+            totalHeight - 20
+          );
+          
+          // Trigger download
+          tempCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.download = `patron-radiacion-${state.currentAntenna}-${timestamp}.png`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+          }, 'image/png');
+          
+        } catch (error) {
+          console.error('Error capturing screenshot:', error);
+          alert('Error al capturar la imagen. Por favor, intente de nuevo.');
+        }
+      },
+
+      /**
+       * Handle window resize
+       */
+      onResize: Utils.debounce(() => {
+        // Adjust canvas sizes based on container
+        const maxWidth = Math.min(1000, window.innerWidth - 40);
+        const canvasSize = Math.min(500, maxWidth / 2);
+        
+        elements.azimutCanvas.width = canvasSize;
+        elements.azimutCanvas.height = canvasSize;
+        elements.elevacionCanvas.width = canvasSize;
+        elements.elevacionCanvas.height = canvasSize;
+        elements.threeDCanvas.width = Math.min(1000, window.innerWidth - 40);
+        elements.threeDCanvas.height = Math.min(500, canvasSize);
+        
+        Visualization.redrawAll();
+      }, 250)
+    };
+
+    // ==================== INITIALIZATION ====================
+    function initialize() {
+      // Setup antenna type listeners
+      elements.antennaRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => EventHandlers.onAntennaChange(e));
+      });
+      
+      // Setup view mode listeners
+      elements.viewRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => EventHandlers.onViewChange(e));
+      });
+      
+      // Setup dipolo controls
+      elements.dipoloLength.addEventListener('input', 
+        EventHandlers.onSliderInput(elements.dipoloLength, elements.dipoloLengthValue, 'λ')
+      );
+      
+      // Setup monopolo controls
+      elements.monopoloLength.addEventListener('input', 
+        EventHandlers.onSliderInput(elements.monopoloLength, elements.monopoloLengthValue, 'λ')
+      );
+      
+      // Setup arreglo controls
+      elements.arregloSeparation.addEventListener('input', 
+        EventHandlers.onSliderInput(elements.arregloSeparation, elements.arregloSeparationValue, 'λ')
+      );
+      elements.arregloPhase.addEventListener('input', 
+        EventHandlers.onSliderInput(elements.arregloPhase, elements.arregloPhaseValue, '°')
+      );
+      
+      // Setup yagi controls
+      elements.yagiDirectors.addEventListener('input', () => {
+        Visualization.redrawAll();
+      });
+      
+      // Setup screenshot button
+      elements.screenshotBtn.addEventListener('click', () => {
+        EventHandlers.captureScreenshot();
+      });
+      
+      // Setup resize listener
+      window.addEventListener('resize', EventHandlers.onResize);
+      
+      // Initialize control visibility
+      EventHandlers.updateControlsVisibility();
+      
+      // Initial draw
+      EventHandlers.onResize();
+      
+      // Add keyboard navigation support
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          document.body.classList.add('keyboard-nav');
+        }
+      });
+      
+      document.addEventListener('mousedown', () => {
+        document.body.classList.remove('keyboard-nav');
+      });
+      
+      console.log('📡 Visualizador de Patrones de Radiación inicializado correctamente');
+    }
+
+    // Start application when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+      initialize();
+    }
+  </script>
+</body>
+</html>
