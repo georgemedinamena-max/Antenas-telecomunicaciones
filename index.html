@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Visualizador interactivo de patrones de radiación de antenas para telecomunicaciones">
+  <meta name="author" content="Universidad de Oriente">
+  <meta name="keywords" content="antenas, patrones de radiación, telecomunicaciones, dipolo, monopolo, yagi, arreglo">
+  <title>Visualizador de Patrones de Radiación de Antenas</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <!-- Estilos CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- ==================== HEADER ==================== -->
+    <header role="banner">
+      <h1>Visualizador de Patrones de Radiación de Antenas</h1>
+      <p>Sistema interactivo para análisis de patrones de radiación en telecomunicaciones. Seleccione el tipo de antena y ajuste sus parámetros para observar los patrones en 2D y 3D.</p>
+    </header>
+
+    <!-- ==================== MAIN VISUALIZATIONS ==================== -->
+    <main role="main">
+      <!-- Patrón Azimutal -->
+      <section id="azimut-section" class="card" aria-labelledby="azimut-title">
+        <h2 id="azimut-title">Patrón Azimutal (Plano Horizontal)</h2>
+        <div class="canvas-container">
+          <span class="canvas-label" aria-hidden="true">Vista XY</span>
+          <canvas id="azimut-canvas" width="500" height="500" aria-label="Gráfico polar del patrón de radiación azimutal"></canvas>
+        </div>
+      </section>
+
+      <!-- Patrón de Elevación -->
+      <section id="elevacion-section" class="card" aria-labelledby="elevacion-title">
+        <h2 id="elevacion-title">Patrón de Elevación (Plano Vertical)</h2>
+        <div class="canvas-container">
+          <span class="canvas-label" aria-hidden="true">Vista XZ</span>
+          <canvas id="elevacion-canvas" width="500" height="500" aria-label="Gráfico polar del patrón de radiación de elevación"></canvas>
+        </div>
+      </section>
+
+      <!-- Visualización 3D -->
+      <section id="threeD-section" class="card" aria-labelledby="threeD-title">
+        <h2 id="threeD-title">Visualización 3D (Proyección Isométrica)</h2>
+        <div class="canvas-container">
+          <span class="canvas-label" aria-hidden="true">Vista 3D</span>
+          <canvas id="threeD-canvas" width="1000" height="500" aria-label="Visualización tridimensional del patrón de radiación"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <!-- ==================== CONTROLS PANEL ==================== -->
+    <aside role="complementary" aria-labelledby="controls-title">
+      <h2 id="controls-title">Panel de Configuración</h2>
+
+      <!-- Selector de Tipo de Antena -->
+      <fieldset class="antenna-selector">
+        <legend class="visually-hidden">Seleccione el tipo de antena</legend>
+        <div class="antenna-option">
+          <input type="radio" id="dipolo" name="antenna" value="dipolo" checked>
+          <label for="dipolo">Dipolo</label>
+        </div>
+        <div class="antenna-option">
+          <input type="radio" id="monopolo" name="antenna" value="monopolo">
+          <label for="monopolo">Monopolo</label>
+        </div>
+        <div class="antenna-option">
+          <input type="radio" id="arreglo" name="antenna" value="arreglo">
+          <label for="arreglo">Arreglo 2λ</label>
+        </div>
+        <div class="antenna-option">
+          <input type="radio" id="yagi" name="antenna" value="yagi">
+          <label for="yagi">Yagi</label>
+        </div>
+      </fieldset>
+
+      <!-- Controles del Dipolo -->
+      <div id="dipolo-controls" class="controls-group" role="group" aria-labelledby="dipolo-controls-title">
+        <h3 id="dipolo-controls-title">Parámetros del Dipolo</h3>
+        <label for="dipolo-length">Longitud del dipolo (λ)</label>
+        <input type="range" id="dipolo-length" min="0.1" max="2" step="0.05" value="0.5" aria-describedby="dipolo-length-value">
+        <span id="dipolo-length-value" class="value-display" aria-live="polite">0.5 λ</span>
+      </div>
+
+      <!-- Controles del Monopolo -->
+      <div id="monopolo-controls" class="controls-group hidden" role="group" aria-labelledby="monopolo-controls-title">
+        <h3 id="monopolo-controls-title">Parámetros del Monopolo</h3>
+        <label for="monopolo-length">Longitud del monopolo (λ)</label>
+        <input type="range" id="monopolo-length" min="0.1" max="1" step="0.05" value="0.25" aria-describedby="monopolo-length-value">
+        <span id="monopolo-length-value" class="value-display" aria-live="polite">0.25 λ</span>
+      </div>
+
+      <!-- Controles del Arreglo -->
+      <div id="arreglo-controls" class="controls-group hidden" role="group" aria-labelledby="arreglo-controls-title">
+        <h3 id="arreglo-controls-title">Parámetros del Arreglo</h3>
+        <label for="arreglo-separation">Separación entre elementos (λ)</label>
+        <input type="range" id="arreglo-separation" min="0.1" max="2" step="0.1" value="0.5" aria-describedby="arreglo-separation-value">
+        <span id="arreglo-separation-value" class="value-display" aria-live="polite">0.5 λ</span>
+
+        <label for="arreglo-phase">Diferencia de fase (°)</label>
+        <input type="range" id="arreglo-phase" min="-180" max="180" step="10" value="0" aria-describedby="arreglo-phase-value">
+        <span id="arreglo-phase-value" class="value-display" aria-live="polite">0°</span>
+      </div>
+
+      <!-- Controles de Yagi -->
+      <div id="yagi-controls" class="controls-group hidden" role="group" aria-labelledby="yagi-controls-title">
+        <h3 id="yagi-controls-title">Parámetros de Yagi</h3>
+        <label for="yagi-directors">Número de directores</label>
+        <input type="number" id="yagi-directors" min="1" max="10" value="3" aria-describedby="yagi-directors-help">
+        <span id="yagi-directors-help" class="visually-hidden">Ingrese un número entre 1 y 10</span>
+      </div>
+
+      <!-- Toggle de Modo de Visualización -->
+      <fieldset class="view-toggle">
+        <legend class="visually-hidden">Modo de visualización</legend>
+        <input type="radio" id="view-gain" name="view" value="gain" checked>
+        <label for="view-gain">Ganancia (dBi)</label>
+        <input type="radio" id="view-power" name="view" value="power">
+        <label for="view-power">Potencia Normalizada</label>
+      </fieldset>
+
+      <!-- Botón de Captura -->
+      <button class="screenshot-btn" id="screenshot-btn" type="button">
+        <span>📸 Capturar Imagen</span>
+      </button>
+    </aside>
+
+    <!-- ==================== RESULTS PANEL ==================== -->
+    <section class="results-panel" role="region" aria-labelledby="results-title">
+      <h2 id="results-title">Análisis de Parámetros</h2>
+      <div class="results-grid">
+        <article class="result-item">
+          <div class="result-value" id="gain-value" aria-live="polite">2.15</div>
+          <div class="result-label">Ganancia Directiva (dBi)</div>
+        </article>
+        <article class="result-item">
+          <div class="result-value" id="beamwidth-value" aria-live="polite">78°</div>
+          <div class="result-label">Ancho del Haz</div>
+        </article>
+        <article class="result-item">
+          <div class="result-value" id="fbr-value" aria-live="polite">∞</div>
+          <div class="result-label">Relación Frente-Espalda</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== LEGEND ==================== -->
+    <div class="legend-container" role="region" aria-labelledby="legend-title">
+      <h3 id="legend-title">Escala de Intensidad</h3>
+      <div class="legend-grid">
+        <div>
+          <div class="legend-bar" role="img" aria-label="Barra de gradiente de colores de intensidad"></div>
+          <div class="legend-labels" id="legend-labels">
+            <span>-30 dB</span>
+            <span>-20 dB</span>
+            <span>-10 dB</span>
+            <span>0 dB</span>
+          </div>
+        </div>
+      </div>
+      <p id="legend-description" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+        Modo actual: <strong id="current-mode-label" style="color: var(--accent-yellow);">Ganancia (dB)</strong>
+      </p>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer role="contentinfo">
+      <p>Aplicación educativa para análisis de antenas en telecomunicaciones</p>
+      <p>
+        <a href="https://www.antenna-theory.com/" target="_blank" rel="noopener noreferrer">Antenna Theory</a> | 
+        <a href="https://www.ece.rutgers.edu/~orfanidi/ewa/" target="_blank" rel="noopener noreferrer">Electromagnetic Waves and Antennas</a> | 
+        <a href="https://www.itu.int/" target="_blank" rel="noopener noreferrer">ITU Resources</a>
+      </p>
+      <p style="margin-top: 1rem; font-size: 0.8rem;">Universidad de Oriente © 2026</p>
+    </footer>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
