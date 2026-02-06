@@ -90,41 +90,41 @@ antenna-radiation-visualizer/
 ### Opción 1: Uso Directo (Recomendado)
 
 1. **Descargar los archivos**:
-   ```bash
+   bash
    # Descargar o clonar el repositorio
    git clone https://github.com/tu-usuario/antenna-radiation-visualizer.git
-   ```
+   
 
-2. **Abrir el archivo HTML**:
+2. Abrir el archivo HTML:
    - Navega hasta la carpeta del proyecto
    - Haz doble clic en `index.html`
    - El archivo se abrirá en tu navegador predeterminado
 
-3. **¡Listo!**: La aplicación estará funcionando completamente
+3. ¡Listo!: La aplicación estará funcionando completamente
 
 ### Opción 2: Servidor Web Local
 
-**Usando Python 3**:
-```bash
+Usando Python 3:
+bash
 cd antenna-radiation-visualizer
 python -m http.server 8000
-```
+
 Luego abre en tu navegador: `http://localhost:8000`
 
-**Usando Node.js (http-server)**:
-```bash
+Usando Node.js (http-server):
+bash
 npm install -g http-server
 cd antenna-radiation-visualizer
 http-server -p 8000
-```
+
 Luego abre en tu navegador: `http://localhost:8000`
 
-**Usando VS Code**:
+Usando VS Code:
 - Instala la extensión "Live Server"
 - Clic derecho en `index.html`
 - Selecciona "Open with Live Server"
 
----
+
 
 ## 📖 Guía de Uso
 
@@ -402,10 +402,10 @@ En `styles.css`, modifica las variables CSS:
 
 ## 👥 Créditos
 
-**Desarrollado por**: Estudiantes de Ingeniería en Telecomunicaciones  
+**Desarrollado por**: George Medina Mena y Tahimi Noa Peña 
 **Universidad**: Universidad de Oriente  
 **Asignatura**: Optativa I - Aplicaciones Web  
-**Profesor**: [Nombre del Profesor]  
+**Profesor**: [Juan Garcia Perez]  
 **Fecha**: Enero 2026
 
 ### Tecnologías Open Source Utilizadas
@@ -427,7 +427,7 @@ Este proyecto es de carácter educativo y está desarrollado para fines académi
 
 Para preguntas, sugerencias o reportar problemas:
 
-- **Correo**: [tu-correo@universidad.edu]
+- **Correo**: [georgemedinamena@gmail.com]
 - **GitHub Issues**: [URL del repositorio]/issues
 - **Profesor**: [correo-profesor@universidad.edu]
 
