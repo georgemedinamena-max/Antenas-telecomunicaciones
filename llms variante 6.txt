@@ -1,0 +1,95 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Variante 6: Visualizador Web de Patrones de Radiación de Antenas
+PROMPT 1: Configuración Inicial del Proyecto
+"Necesito crear una aplicación web para visualizar patrones de radiación de antenas. Quiero empezar con la estructura HTML5 semántica base. Debe incluir:
+• Un header con título principal y descripción del visualizador
+• Un aside para los controles de configuración de antenas
+• Un main con sections para mostrar los patrones de radiación
+• Un footer con información sobre conceptos de antenas
+Por favor, dame la estructura HTML5 completa usando etiquetas semánticas. Incluye también un CSS básico con variables CSS para los colores que voy a usar en toda la aplicación. Quiero una paleta tipo software técnico/científico con tonos azules oscuros y acentos cian."
+PROMPT 2: Sistema de Diseño Responsive con Grid y Flexbox
+"Ahora necesito implementar el diseño responsive de mi visualizador de antenas. La aplicación debe tener este comportamiento:
+En escritorio (>1200px):
+• Los dos patrones polares 2D (azimut y elevación) deben estar lado a lado
+• La visualización 3D debe ir debajo ocupando el ancho completo
+• El aside de controles debe estar a un lado
+En tablet (768px-1200px):
+• Dos columnas con los patrones
+• 3D debajo
+En móvil (<768px):
+• Todo apilado verticalmente
+Usa CSS Grid para la estructura principal y Flexbox para los controles internos del aside. También añade el efecto de una cuadrícula animada en el fondo que simule un sistema de coordenadas técnico."
+PROMPT 3: Controles Dinámicos y Radio Buttons Personalizados
+"Necesito implementar los controles para seleccionar el tipo de antena y sus parámetros. Debo tener:
+1. Radio buttons para seleccionar entre: Dipolo, Monopolo, Arreglo de 2 elementos, y Antena Yagi
+2. Controles específicos para cada tipo de antena que se muestren/oculten dinámicamente:
+   • Dipolo: slider para longitud (0.1λ a 2λ)
+   • Monopolo: slider para longitud (0.1λ a 1λ)
+   • Arreglo: sliders para separación (0.1λ a 2λ) y fase (0° a 180°)
+   • Yagi: control numérico para número de directores (1-5)
+3. Radio buttons para cambiar entre visualización de ganancia (dBi) y potencia normalizada
+Implementa el JavaScript para mostrar/ocultar los controles correspondientes cuando se selecciona un tipo de antena. Los radio buttons deben tener un estilo personalizado con efectos hover y transiciones suaves usando CSS."
+ 
+PROMPT 4: Renderizado de Patrones Polares 2D con Canvas
+"Ahora viene la parte más importante: renderizar los patrones de radiación polares en 2D usando Canvas. Necesito:
+1. Crear una función que dibuje coordenadas polares con:
+   • Círculos concéntricos que representen niveles de ganancia (-30dB, -20dB, -10dB, 0dB)
+   • Líneas radiales cada 30 grados
+   • Etiquetas de ángulos (0°, 90°, 180°, 270°)
+   • Grid style similar a software de simulación electromagnética
+2. Implementar el cálculo matemático del patrón de radiación para cada tipo de antena:
+   • Dipolo: patrón omnidireccional en azimut, forma de 8 en elevación
+   • Monopolo: patrón omnidireccional en azimut, un solo lóbulo en elevación
+   • Arreglo: interferencia entre dos elementos según separación y fase
+   • Yagi: patrón directivo con lóbulos laterales
+3. Dibujar el patrón usando una escala de colores del azul (baja potencia) al rojo (alta potencia). Implementa la interpolación de colores necesaria.
+El patrón debe actualizarse en tiempo real cuando se cambian los parámetros de los sliders."
+PROMPT 5: Visualización 3D Isométrica con Canvas
+"Necesito agregar una representación 3D simplificada del patrón de radiación usando proyección isométrica.
+Requisitos:
+• Usar Canvas con transformaciones matemáticas para convertir coordenadas 3D a 2D
+• Mostrar el patrón de radiación en perspectiva isométrica
+• Implementar las funciones de conversión de coordenadas esféricas (r, θ, φ) a cartesianas (x, y, z) y luego a isométricas
+• Dibujar la superficie del patrón 3D con wireframe o superficie sombreada
+• Añadir ejes de referencia XYZ con etiquetas
+• Permitir rotar la vista con controles de rotación en X e Y
+El patrón 3D también debe actualizarse cuando se cambian los parámetros de la antena y debe usar la misma escala de colores que las vistas 2D."
+PROMPT 6: Panel de Resultados y Cálculos Técnicos
+"Necesito añadir un panel que muestre parámetros calculados de la antena actual:
+1. Ganancia directiva en dBi
+2. Ancho de haz a -3dB (HPBW - Half Power Beamwidth)
+3. Relación frente-espalda (Front-to-Back Ratio) en dB
+Implementa las funciones JavaScript para calcular estos parámetros basándote en el patrón de radiación actual. Los valores deben actualizarse en tiempo real con animación (scale transform) cada vez que se modifican los controles.
+El panel debe estar en un article con diseño de tarjetas (cards) usando CSS Grid para distribuir los tres valores. Cada valor debe tener un ícono representativo y unidades claramente indicadas."
+PROMPT 7: Funcionalidad de Captura de Pantalla
+"Quiero añadir un botón que permita exportar/capturar las visualizaciones actuales como imagen PNG.
+Requisitos:
+• Crear un canvas temporal que combine los tres canvas (azimut, elevación y 3D)
+• Azimut y elevación deben ir lado a lado en la parte superior
+• 3D debe ir abajo ocupando el ancho completo
+• Agregar un título en la parte inferior con el tipo de antena actual
+• Usar toBlob() para generar la imagen y triggerear la descarga automática
+• El nombre del archivo debe incluir el tipo de antena y timestamp
+Implementa también el manejo de errores en caso de que la captura falle y muestra un mensaje al usuario."
+ 
+PROMPT 8: Leyenda de Colores y Mejoras de Accesibilidad
+"Necesito finalizar la aplicación añadiendo:
+1. Una leyenda de colores que muestre la escala de ganancia/potencia:
+   • Usar CSS Grid para layout de la leyenda
+   • Gradient background que vaya del azul al rojo
+   • Labels que indiquen los valores según el modo actual (dB o %)
+   • Actualizar la leyenda cuando se cambie entre modo ganancia y potencia
+2. Mejoras de accesibilidad:
+   • Todos los inputs deben tener labels asociados
+   • Navegación por teclado funcional (Tab para moverse entre controles)
+   • Indicador visual cuando se usa navegación por teclado
+   • Contraste adecuado de colores (WCAG AA)
+   • Atributos ARIA donde sea necesario
+3. Footer con enlaces a recursos educativos sobre antenas y propagación electromagnética (usar rel='noopener' para seguridad)
+Por favor, implementa estos elementos finales asegurando que la aplicación cumpla con estándares web modernos y sea completamente accesible."
+NOTAS ADICIONALES
+• Todos los prompts fueron diseñados siguiendo la metodología de "vibe coding"
+• Se utilizó JavaScript ES6+ (const, let, arrow functions, destructuring)
+• Se implementó debouncing para optimizar el renderizado durante resize
+• Se aplicaron principios de diseño responsive-first
+• La paleta de colores está inspirada en software de simulación electromagnética profesional (HFSS, CST)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
